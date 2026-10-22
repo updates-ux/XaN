@@ -1,0 +1,1049 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#101722">
+    <title>RC Dispatch | Load desk</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        color: #e9edf4;
+        background: #101722;
+        font-synthesis: none;
+        text-rendering: optimizeLegibility;
+        --bg: #101722;
+        --panel: #182230;
+        --panel-raised: #1c2939;
+        --line: #2b394b;
+        --muted: #93a1b4;
+        --text: #e9edf4;
+        --accent: #4f83ff;
+        --green: #46c78b;
+        --red: #ff7777;
+        --amber: #f1b958;
+      }
+      * { box-sizing: border-box; }
+      body { min-width: 320px; margin: 0; background: var(--bg); }
+      button, input, textarea, select { font: inherit; }
+      button { color: inherit; }
+      .shell { min-height: 100vh; }
+      .topbar {
+        height: 68px; display: flex; align-items: center; gap: 12px;
+        padding: 0 28px; border-bottom: 1px solid var(--line); background: #141e2b;
+      }
+      .brand-mark { display: grid; width: 35px; height: 35px; place-items: center; border-radius: 10px; background: var(--accent); color: white; font-size: 13px; font-weight: 850; }
+      .brand-name { font-size: 14px; font-weight: 750; }
+      .local-badge { margin-left: auto; color: var(--muted); font-size: 11px; }
+      .layout { display: grid; grid-template-columns: 218px minmax(0, 1fr); min-height: calc(100vh - 68px); }
+      .sidebar { padding: 25px 14px; border-right: 1px solid var(--line); background: #141e2b; }
+      .nav-caption { margin: 0 12px 10px; color: #738197; font-size: 10px; font-weight: 800; letter-spacing: .13em; text-transform: uppercase; }
+      .nav-list { display: grid; gap: 5px; }
+      .nav-button {
+        display: flex; align-items: center; gap: 11px; width: 100%; padding: 11px 12px;
+        border: 1px solid transparent; border-radius: 8px; background: transparent; color: #aab6c7;
+        text-align: left; cursor: pointer; font-size: 12px; font-weight: 650;
+      }
+      .nav-button:hover { background: #1b293a; color: var(--text); }
+      .nav-button.active { border-color: #294678; background: #1b2e4b; color: #9ebcff; }
+      .nav-icon { width: 17px; text-align: center; font-size: 15px; }
+      .sidebar-note { margin: 28px 10px 0; color: #77859a; font-size: 11px; line-height: 1.6; }
+      main { width: min(1500px, 100%); margin: 0 auto; padding: 29px clamp(18px, 3vw, 42px) 50px; }
+      .view { display: none; }
+      .view.active { display: block; }
+      .page-heading { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; margin-bottom: 23px; }
+      .eyebrow { margin: 0 0 7px; color: #85a8ff; font-size: 10px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; }
+      h1 { margin: 0; color: #f3f5f9; font-size: clamp(23px, 3vw, 29px); letter-spacing: -.04em; }
+      .subtitle { margin: 7px 0 0; color: var(--muted); font-size: 12px; line-height: 1.5; }
+      h2 { margin: 0; font-size: 13px; font-weight: 750; }
+      .panel { min-width: 0; overflow: hidden; border: 1px solid var(--line); border-radius: 11px; background: var(--panel); }
+      .panel-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 15px 17px; border-bottom: 1px solid var(--line); }
+      .panel-body { padding: 16px 17px; }
+      .dispatch-grid { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(350px, .95fr); align-items: start; gap: 17px; }
+      .left-stack { display: grid; gap: 13px; min-width: 0; }
+      .form-section { padding: 16px 17px; }
+      .section-title { display: flex; align-items: center; gap: 9px; margin-bottom: 14px; color: #f0f3f8; font-size: 12px; font-weight: 750; }
+      .section-number { display: grid; width: 23px; height: 23px; place-items: center; border-radius: 7px; background: #243a5e; color: #9ebcff; font-size: 10px; font-weight: 800; }
+      .fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+      .fields.three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      label { display: grid; gap: 6px; min-width: 0; color: #afbac9; font-size: 10px; font-weight: 650; }
+      input, textarea, select {
+        width: 100%; min-width: 0; border: 1px solid #344356; border-radius: 7px; outline: none;
+        background: #111a26; color: var(--text); font-size: 12px; transition: border-color .15s, box-shadow .15s;
+      }
+      input, select { height: 37px; padding: 0 10px; }
+      textarea { min-height: 75px; padding: 10px; resize: vertical; line-height: 1.5; }
+      input::placeholder, textarea::placeholder { color: #69788d; }
+      input:focus, textarea:focus, select:focus { border-color: #6490f5; box-shadow: 0 0 0 3px #4f83ff1e; }
+      .full { grid-column: 1 / -1; }
+      .upload-zone { padding: 13px; border: 1px dashed #3c4d63; border-radius: 8px; background: #141f2d; }
+      .upload-row { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
+      .upload-copy { flex: 1; min-width: 175px; }
+      .upload-copy strong { display: block; margin-bottom: 4px; color: #e1e8f2; font-size: 11px; }
+      .upload-copy span, .help { color: var(--muted); font-size: 10px; line-height: 1.55; }
+      input[type="file"] { max-width: 245px; padding: 7px; font-size: 10px; }
+      .paste-area { margin-top: 11px; }
+      .paste-area textarea { min-height: 75px; }
+      .button-row { display: flex; flex-wrap: wrap; gap: 8px; }
+      .btn {
+        display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 35px;
+        padding: 0 12px; border: 1px solid #39485d; border-radius: 7px; background: #202d3e;
+        color: #dfe6f0; cursor: pointer; font-size: 11px; font-weight: 700; transition: background .15s, border-color .15s;
+      }
+      .btn:hover { border-color: #526681; background: #28384c; }
+      .btn.primary { border-color: #4f83ff; background: #356de5; color: white; }
+      .btn.primary:hover { background: #467df2; }
+      .btn.danger { color: #ffaaaa; }
+      .btn.small { min-height: 29px; padding: 0 9px; font-size: 10px; }
+      .notice { display: none; margin-top: 10px; padding: 9px 10px; border: 1px solid #35485e; border-radius: 7px; color: #bdc9d9; background: #1a2838; font-size: 10px; line-height: 1.5; }
+      .notice.visible { display: block; }
+      .notice.warning { border-color: #6e5932; color: #f2cd83; background: #302817; }
+      .notice.success { border-color: #28553f; color: #8be0b2; background: #172b23; }
+      .notice.error { border-color: #663a40; color: #ffaaaa; background: #2c1e24; }
+      .preview-panel { position: sticky; top: 15px; }
+      .live-tag { padding: 5px 8px; border-radius: 99px; background: #183729; color: #80d7a8; font-size: 9px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
+      #preview {
+        min-height: 520px; max-height: calc(100vh - 285px); overflow: auto; margin: 0; padding: 16px;
+        border: 1px solid #2b394b; border-radius: 8px; background: #111a26; color: #e7ecf4;
+        font: 11px/1.68 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; white-space: pre-wrap; overflow-wrap: anywhere;
+      }
+      .preview-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 11px; }
+      .preview-actions .btn { min-height: 39px; }
+      .copy-status { min-height: 16px; margin: 8px 0 0; color: var(--green); text-align: center; font-size: 10px; }
+      .toolbar { display: flex; align-items: center; flex-wrap: wrap; gap: 9px; }
+      .search-input { width: min(330px, 100%); }
+      .stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 13px; margin-bottom: 16px; }
+      .stat-card { padding: 17px; }
+      .stat-label { color: var(--muted); font-size: 10px; font-weight: 700; }
+      .stat-value { margin-top: 10px; color: #f4f6fa; font-size: 25px; font-weight: 780; letter-spacing: -.04em; }
+      .stat-meta { margin-top: 4px; color: #738197; font-size: 10px; }
+      .table-wrap { overflow-x: auto; }
+      table { width: 100%; border-collapse: collapse; text-align: left; }
+      th { padding: 10px 12px; border-bottom: 1px solid var(--line); color: #8695a9; font-size: 9px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; white-space: nowrap; }
+      td { padding: 12px; border-bottom: 1px solid #253244; color: #d3dbe6; font-size: 11px; vertical-align: middle; }
+      tbody tr:last-child td { border-bottom: 0; }
+      .table-actions { display: flex; gap: 6px; }
+      .empty { padding: 25px 12px; color: var(--muted); text-align: center; font-size: 11px; }
+      .settings-list { display: grid; gap: 13px; }
+      .setting-row { display: grid; grid-template-columns: minmax(140px, .6fr) minmax(220px, 1fr); gap: 12px; align-items: center; }
+      .setting-row > span { color: #b9c4d2; font-size: 11px; }
+      .toast {
+        position: fixed; z-index: 10; right: 22px; bottom: 22px; max-width: min(430px, calc(100vw - 32px));
+        padding: 12px 15px; border: 1px solid #355b48; border-radius: 9px; background: #1a3025;
+        color: #a7e9c1; box-shadow: 0 9px 35px #0006; font-size: 12px; opacity: 0; transform: translateY(8px);
+        pointer-events: none; transition: opacity .18s, transform .18s;
+      }
+      .toast.show { opacity: 1; transform: translateY(0); }
+      .toast.error { border-color: #68424b; background: #321f26; color: #ffc0c0; }
+      .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+      @media (max-width: 980px) {
+        .layout { grid-template-columns: 175px minmax(0,1fr); }
+        .dispatch-grid { grid-template-columns: minmax(0,1fr); }
+        .preview-panel { position: static; }
+        #preview { max-height: none; min-height: 410px; }
+      }
+      @media (max-width: 680px) {
+        .topbar { height: 58px; padding: 0 15px; }
+        .local-badge { font-size: 9px; }
+        .layout { display: block; min-height: calc(100vh - 58px); }
+        .sidebar { position: sticky; z-index: 5; top: 0; padding: 7px 10px; border-right: 0; border-bottom: 1px solid var(--line); }
+        .nav-caption, .sidebar-note { display: none; }
+        .nav-list { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; }
+        .nav-button { justify-content: center; gap: 5px; padding: 9px 4px; font-size: 9px; }
+        .nav-icon { font-size: 13px; }
+        main { padding: 22px 13px 36px; }
+        .page-heading { align-items: flex-start; flex-direction: column; }
+        .stats { grid-template-columns: 1fr; gap: 8px; }
+        .stat-card { padding: 13px; }
+        .stat-value { margin-top: 5px; font-size: 21px; }
+      }
+      @media (max-width: 430px) {
+        .fields.three { grid-template-columns: 1fr 1fr; }
+        .fields.three .full { grid-column: 1 / -1; }
+        .form-section { padding: 13px; }
+        .setting-row { grid-template-columns: 1fr; gap: 6px; }
+        .preview-actions { grid-template-columns: 1fr; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="shell">
+      <header class="topbar">
+        <div class="brand-mark" aria-hidden="true">RC</div>
+        <div class="brand-name">Dispatch Desk</div>
+        <div class="local-badge">Local workspace · Data stays in this browser</div>
+      </header>
+      <div class="layout">
+        <aside class="sidebar" aria-label="Main navigation">
+          <p class="nav-caption">Workspace</p>
+          <nav class="nav-list">
+            <button class="nav-button active" data-view="dashboard"><span class="nav-icon">▦</span>Dashboard</button>
+            <button class="nav-button" data-view="dispatch"><span class="nav-icon">＋</span>New Dispatch</button>
+            <button class="nav-button" data-view="history"><span class="nav-icon">≡</span>History</button>
+            <button class="nav-button" data-view="settings"><span class="nav-icon">⚙</span>Settings</button>
+          </nav>
+          <p class="sidebar-note">Loads are saved only in this browser on this device. They are not synced to other computers.</p>
+        </aside>
+        <main>
+          <section class="view active" id="view-dashboard">
+            <div class="page-heading">
+              <div><p class="eyebrow">Operations overview</p><h1>Dashboard</h1><p class="subtitle">A live view of your locally saved dispatches.</p></div>
+              <button class="btn primary" type="button" data-go="dispatch">＋ New dispatch</button>
+            </div>
+            <div class="stats">
+              <article class="panel stat-card"><div class="stat-label">TOTAL LOADS PROCESSED</div><div class="stat-value" id="stat-total">0</div><div class="stat-meta">Saved in this browser</div></article>
+              <article class="panel stat-card"><div class="stat-label">LOADS CREATED TODAY</div><div class="stat-value" id="stat-today">0</div><div class="stat-meta">Based on local saved date</div></article>
+              <article class="panel stat-card"><div class="stat-label">TOTAL BOOKED REVENUE</div><div class="stat-value" id="stat-revenue">$0.00</div><div class="stat-meta">Sum of saved load rates</div></article>
+            </div>
+            <section class="panel">
+              <div class="panel-head"><h2>Recent loads</h2><button class="btn small" type="button" data-go="history">View history</button></div>
+              <div class="table-wrap" id="recent-table"></div>
+            </section>
+          </section>
+
+          <section class="view" id="view-dispatch">
+            <div class="page-heading">
+              <div><p class="eyebrow">Load operations</p><h1 id="dispatch-title">New Dispatch</h1><p class="subtitle">Review every extracted field. Missing details stay blank until you enter them.</p></div>
+              <div class="toolbar"><button class="btn" id="clear-button" type="button">Clear form</button><button class="btn primary" id="save-button" type="button">Save load</button></div>
+            </div>
+            <div class="dispatch-grid">
+              <form id="dispatch-form" class="left-stack" autocomplete="off">
+                <section class="panel form-section">
+                  <div class="section-title"><span class="section-number">01</span>RC document intake</div>
+                  <div class="upload-zone">
+                    <div class="upload-row">
+                      <div class="upload-copy"><strong>Upload rate confirmation PDF</strong><span>Text-based PDFs are extracted in your browser. Scanned/image PDFs need manual entry.</span></div>
+                      <input id="pdf-file" type="file" accept="application/pdf,.pdf" aria-label="Upload rate confirmation PDF">
+                    </div>
+                    <div class="paste-area">
+                      <label for="rc-text">Or paste RC text</label>
+                      <textarea id="rc-text" placeholder="Paste the text from a rate confirmation, then choose Extract fields..."></textarea>
+                    </div>
+                    <div class="button-row" style="margin-top:9px"><button class="btn small" id="extract-button" type="button">Extract fields</button></div>
+                    <div class="notice" id="extract-notice" role="status"></div>
+                  </div>
+                </section>
+
+                <section class="panel form-section">
+                  <div class="section-title"><span class="section-number">02</span>Load details</div>
+                  <div class="fields three">
+                    <label>Load number<input name="loadNumber" placeholder="Load number"></label>
+                    <label>BOL number<input name="bolNumber" placeholder="BOL number"></label>
+                    <label>PU number<input name="puNumber" placeholder="PU number"></label>
+                    <label class="full">Rate (USD)<input name="rate" type="number" min="0" step="0.01" inputmode="decimal" placeholder="0.00"></label>
+                  </div>
+                </section>
+
+                <section class="panel form-section">
+                  <div class="section-title"><span class="section-number">03</span>Pickup</div>
+                  <div class="fields">
+                    <label class="full">Facility name<input name="pickupFacility" placeholder="Pickup facility"></label>
+                    <label class="full">Street address<input name="pickupAddress" placeholder="Street address"></label>
+                    <label>City<input name="pickupCity" placeholder="City"></label>
+                    <label>State<input name="pickupState" placeholder="State"></label>
+                    <label>ZIP code<input name="pickupZip" placeholder="ZIP code"></label>
+                    <label>Date<input name="pickupDate" placeholder="MM/DD/YY"></label>
+                    <label class="full">Appointment time / window<input name="pickupTime" placeholder="09:00-15:00"></label>
+                  </div>
+                </section>
+
+                <section class="panel form-section">
+                  <div class="section-title"><span class="section-number">04</span>Delivery</div>
+                  <div class="fields">
+                    <label class="full">Facility name<input name="deliveryFacility" placeholder="Delivery facility"></label>
+                    <label class="full">Street address<input name="deliveryAddress" placeholder="Street address"></label>
+                    <label>City<input name="deliveryCity" placeholder="City"></label>
+                    <label>State<input name="deliveryState" placeholder="State"></label>
+                    <label>ZIP code<input name="deliveryZip" placeholder="ZIP code"></label>
+                    <label>Date<input name="deliveryDate" placeholder="MM/DD/YY"></label>
+                    <label class="full">Appointment time / window<input name="deliveryTime" placeholder="07:00-15:00"></label>
+                  </div>
+                </section>
+
+                <section class="panel form-section">
+                  <div class="section-title"><span class="section-number">05</span>Special instructions</div>
+                  <label for="special-instructions">Instructions for dispatcher <span class="help">Kept in the form only; not included in the generated message.</span></label>
+                  <textarea id="special-instructions" name="notes" placeholder="Special load instructions..."></textarea>
+                </section>
+              </form>
+
+              <aside class="panel preview-panel" aria-labelledby="preview-heading">
+                <div class="panel-head"><h2 id="preview-heading">Message preview</h2><span class="live-tag">Live</span></div>
+                <div class="panel-body">
+                  <div class="notice warning visible" id="missing-notice" role="status"></div>
+                  <pre id="preview" aria-live="polite"></pre>
+                  <div class="preview-actions">
+                    <button class="btn primary" id="copy-button" type="button">Copy message</button>
+                    <button class="btn" id="download-button" type="button">Download .txt</button>
+                  </div>
+                  <p class="copy-status" id="copy-status" role="status" aria-live="polite"></p>
+                </div>
+              </aside>
+            </div>
+          </section>
+
+          <section class="view" id="view-history">
+            <div class="page-heading">
+              <div><p class="eyebrow">Saved dispatches</p><h1>Dispatch History</h1><p class="subtitle">Search by load number, BOL number, or PU number. Reopen a load to edit it.</p></div>
+              <button class="btn primary" type="button" data-go="dispatch">＋ New dispatch</button>
+            </div>
+            <section class="panel">
+              <div class="panel-head">
+                <h2>All loads</h2>
+                <input id="history-search" class="search-input" type="search" placeholder="Search load, BOL, or PU number..." aria-label="Search dispatch history">
+              </div>
+              <div class="table-wrap" id="history-table"></div>
+            </section>
+          </section>
+
+          <section class="view" id="view-settings">
+            <div class="page-heading"><div><p class="eyebrow">Workspace preferences</p><h1>Settings</h1><p class="subtitle">Configure charge-fee lines and message date formatting.</p></div></div>
+            <section class="panel">
+              <div class="panel-head"><h2>Charge fee rules</h2></div>
+              <div class="panel-body">
+                <p class="subtitle" style="margin:0 0 13px">One message line per rule. Use the default wording to preserve your current RC template.</p>
+                <label for="fee-rules">Fee lines</label>
+                <textarea id="fee-rules" style="min-height:190px;margin-top:7px"></textarea>
+                <div class="button-row" style="margin-top:11px"><button class="btn primary" id="save-settings" type="button">Save settings</button><button class="btn" id="reset-settings" type="button">Restore defaults</button></div>
+                <div class="notice" id="settings-notice" role="status"></div>
+              </div>
+            </section>
+            <section class="panel" style="margin-top:14px">
+              <div class="panel-head"><h2>Message formatting</h2></div>
+              <div class="panel-body">
+                <div class="setting-row">
+                  <span>Date format</span>
+                  <select id="date-format" aria-label="Date format"><option value="us">MM/DD/YY (US)</option><option value="source">Keep source date format</option></select>
+                </div>
+              </div>
+            </section>
+            <p class="help" style="margin-top:15px">Storage: browser localStorage on this device only. Clearing browser site data or using a different browser/device will not preserve or sync these loads. Add a shared backend and authentication for team-wide data.</p>
+          </section>
+        </main>
+      </div>
+      <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    </div>
+
+    <script>
+      const STORAGE_LOADS = "rc-dispatch-loads-v1";
+      const STORAGE_SETTINGS = "rc-dispatch-settings-v1";
+      const DEFAULT_FEES = [
+        "⚠️ Late PU: $100",
+        "⚠️ Late DEL: $100",
+        "⚠️ BOL/ POD",
+        "⚠️ Trailer pictures not sent: $200",
+        "⚠️ On time update: $150",
+        "⚠️ (every4hrs)",
+        "⚠️ Leaving Facility without GTG $200",
+        "⚠️ Tracking not accepted: $300"
+      ];
+      const REQUIRED_FIELDS = [
+        ["loadNumber", "Load number"],
+        ["rate", "Rate"], ["pickupFacility", "Pickup facility"], ["pickupAddress", "Pickup address"],
+        ["pickupCity", "Pickup city"], ["pickupState", "Pickup state"], ["pickupZip", "Pickup ZIP"],
+        ["pickupDate", "Pickup date"], ["pickupTime", "Pickup appointment time"],
+        ["deliveryFacility", "Delivery facility"], ["deliveryAddress", "Delivery address"],
+        ["deliveryCity", "Delivery city"], ["deliveryState", "Delivery state"], ["deliveryZip", "Delivery ZIP"],
+        ["deliveryDate", "Delivery date"], ["deliveryTime", "Delivery appointment time"]
+      ];
+      const form = document.querySelector("#dispatch-form");
+      const fieldElements = Object.fromEntries(
+        [...form.elements].filter((element) => element.name).map((element) => [element.name, element])
+      );
+      const preview = document.querySelector("#preview");
+      const missingNotice = document.querySelector("#missing-notice");
+      const copyStatus = document.querySelector("#copy-status");
+      const toast = document.querySelector("#toast");
+      let editingId = null;
+      let toastTimer;
+
+      function readStorage(key, fallback) {
+        try {
+          const value = localStorage.getItem(key);
+          return value === null ? fallback : JSON.parse(value);
+        } catch (error) {
+          showToast(`Could not read saved browser data: ${error.message}`, true);
+          return fallback;
+        }
+      }
+      function writeStorage(key, value) {
+        try {
+          localStorage.setItem(key, JSON.stringify(value));
+          return true;
+        } catch (error) {
+          showToast(`Could not save to this browser: ${error.message}`, true);
+          return false;
+        }
+      }
+      function settings() {
+        const stored = readStorage(STORAGE_SETTINGS, {});
+        return {
+          fees: Array.isArray(stored.fees) ? stored.fees : DEFAULT_FEES,
+          dateFormat: stored.dateFormat === "source" ? "source" : "us"
+        };
+      }
+      function loads() {
+        const stored = readStorage(STORAGE_LOADS, []);
+        return Array.isArray(stored) ? stored : [];
+      }
+      function showToast(message, isError) {
+        toast.textContent = message;
+        toast.classList.toggle("error", Boolean(isError));
+        toast.classList.add("show");
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => toast.classList.remove("show"), 3600);
+      }
+      function setNotice(element, message, type) {
+        element.textContent = message;
+        element.className = `notice visible${type ? ` ${type}` : ""}`;
+      }
+      function value(name) {
+        return fieldElements[name].value.trim();
+      }
+      function formatDate(input) {
+        const source = input.trim();
+        if (!source) return "";
+        if (settings().dateFormat === "source") return source;
+        let match = source.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{2}|\d{4})$/);
+        if (match) {
+          let year = match[3];
+          if (year.length === 4) year = year.slice(-2);
+          return `${match[1].padStart(2, "0")}/${match[2].padStart(2, "0")}/${year}`;
+        }
+        match = source.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+        if (match) return `${match[2]}/${match[3]}/${match[1].slice(-2)}`;
+        return source;
+      }
+      function cityStateZip(prefix) {
+        const city = value(`${prefix}City`);
+        const state = value(`${prefix}State`);
+        const zip = value(`${prefix}Zip`);
+        if (!city && !state && !zip) return "";
+        return `${city}${city && state ? ", " : ""}${state}${(city || state) && zip ? " " : ""}${zip}`;
+      }
+      function locationLines(prefix) {
+        return [
+          value(`${prefix}Facility`),
+          value(`${prefix}Address`),
+          cityStateZip(prefix)
+        ].join("\n");
+      }
+      function missingFields() {
+        return REQUIRED_FIELDS.filter(([name]) => !value(name)).map(([, label]) => label);
+      }
+      function generateMessage() {
+        const rateValue = value("rate");
+        const parsedRate = rateValue === "" ? null : Number(rateValue);
+        const rate = parsedRate !== null && Number.isFinite(parsedRate) && parsedRate >= 0
+          ? parsedRate.toFixed(2)
+          : "";
+        return [
+          `Load# ${value("loadNumber")}`,
+          "",
+          "_____________________________________",
+          "",
+          "PU",
+          "",
+          locationLines("pickup"),
+          "",
+          `${formatDate(value("pickupDate"))}${value("pickupDate") && value("pickupTime") ? " " : ""}${value("pickupTime")}`,
+          "",
+          "_____________________________________",
+          "",
+          "Del",
+          "",
+          locationLines("delivery"),
+          "",
+          `${formatDate(value("deliveryDate"))}${value("deliveryDate") && value("deliveryTime") ? " " : ""}${value("deliveryTime")}`,
+          "",
+          "_____________________________________",
+          "",
+          `Rate: $${rate} USD`,
+          "",
+          "Charge Fee ❗️ ❗️ ❗️",
+          "",
+          ...settings().fees,
+          "",
+          "IMPORTANT !!!"
+        ].join("\n");
+      }
+      function renderPreview() {
+        preview.textContent = generateMessage();
+        const missing = missingFields();
+        if (missing.length) {
+          setNotice(missingNotice, `Missing required fields: ${missing.join(", ")}. Complete these before copying or saving.`, "warning");
+        } else {
+          missingNotice.className = "notice";
+          missingNotice.textContent = "";
+        }
+      }
+      function currentLoad() {
+        const result = {};
+        for (const [name, element] of Object.entries(fieldElements)) result[name] = element.value.trim();
+        return result;
+      }
+      function fillForm(load) {
+        for (const [name, element] of Object.entries(fieldElements)) element.value = load[name] || "";
+        renderPreview();
+      }
+      function newDispatch() {
+        editingId = null;
+        form.reset();
+        document.querySelector("#rc-text").value = "";
+        document.querySelector("#pdf-file").value = "";
+        document.querySelector("#dispatch-title").textContent = "New Dispatch";
+        document.querySelector("#save-button").textContent = "Save load";
+        document.querySelector("#extract-notice").className = "notice";
+        renderPreview();
+      }
+      function openLoad(id) {
+        const load = loads().find((item) => item.id === id);
+        if (!load) {
+          showToast("That saved load could not be found.", true);
+          return;
+        }
+        editingId = load.id;
+        fillForm(load.fields || {});
+        document.querySelector("#dispatch-title").textContent = `Edit Load ${load.fields.loadNumber || ""}`.trim();
+        document.querySelector("#save-button").textContent = "Update load";
+        navigate("dispatch");
+      }
+      function navigate(view) {
+        document.querySelectorAll(".view").forEach((element) => element.classList.toggle("active", element.id === `view-${view}`));
+        document.querySelectorAll(".nav-button").forEach((element) => element.classList.toggle("active", element.dataset.view === view));
+        if (view === "dashboard") renderDashboard();
+        if (view === "history") renderHistory();
+        if (view === "settings") loadSettingsForm();
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
+      function safeText(text) {
+        return String(text || "").replace(/[&<>"']/g, (character) => ({
+          "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+        })[character]);
+      }
+      function tableMarkup(items) {
+        if (!items.length) return '<div class="empty">No saved loads yet. Save a dispatch to see it here.</div>';
+        const rows = items.map((load) => {
+          const fields = load.fields || {};
+          const saved = load.updatedAt || load.createdAt;
+          const date = saved ? new Date(saved).toLocaleDateString() : "—";
+          const rate = Number(fields.rate);
+          const rateText = fields.rate !== "" && Number.isFinite(rate) ? `$${rate.toFixed(2)}` : "—";
+          return `<tr>
+            <td><strong>${safeText(fields.loadNumber || "—")}</strong></td>
+            <td>${safeText(fields.bolNumber || "—")}</td>
+            <td>${safeText(fields.puNumber || "—")}</td>
+            <td>${safeText(fields.pickupCity || "—")} → ${safeText(fields.deliveryCity || "—")}</td>
+            <td>${rateText}</td>
+            <td>${safeText(date)}</td>
+            <td><div class="table-actions"><button class="btn small" data-edit="${safeText(load.id)}" type="button">Open</button></div></td>
+          </tr>`;
+        }).join("");
+        return `<table><thead><tr><th>Load #</th><th>BOL #</th><th>PU #</th><th>Route</th><th>Rate</th><th>Saved</th><th></th></tr></thead><tbody>${rows}</tbody></table>`;
+      }
+      function renderDashboard() {
+        const saved = loads().sort((a, b) => Date.parse(b.updatedAt || b.createdAt) - Date.parse(a.updatedAt || a.createdAt));
+        const today = new Date().toLocaleDateString();
+        const todayCount = saved.filter((item) => new Date(item.createdAt).toLocaleDateString() === today).length;
+        const revenue = saved.reduce((sum, item) => {
+          const rate = Number(item.fields && item.fields.rate);
+          return sum + (Number.isFinite(rate) ? rate : 0);
+        }, 0);
+        document.querySelector("#stat-total").textContent = String(saved.length);
+        document.querySelector("#stat-today").textContent = String(todayCount);
+        document.querySelector("#stat-revenue").textContent = revenue.toLocaleString("en-US", { style: "currency", currency: "USD" });
+        document.querySelector("#recent-table").innerHTML = tableMarkup(saved.slice(0, 5));
+      }
+      function renderHistory() {
+        const query = document.querySelector("#history-search").value.trim().toLowerCase();
+        const filtered = loads()
+          .filter((item) => [item.fields?.loadNumber, item.fields?.bolNumber, item.fields?.puNumber]
+            .some((text) => String(text || "").toLowerCase().includes(query)))
+          .sort((a, b) => Date.parse(b.updatedAt || b.createdAt) - Date.parse(a.updatedAt || a.createdAt));
+        document.querySelector("#history-table").innerHTML = tableMarkup(filtered);
+      }
+      function loadSettingsForm() {
+        const current = settings();
+        document.querySelector("#fee-rules").value = current.fees.join("\n");
+        document.querySelector("#date-format").value = current.dateFormat;
+      }
+      function validateRate() {
+        const rate = value("rate");
+        if (rate === "") return true;
+        return Number.isFinite(Number(rate)) && Number(rate) >= 0;
+      }
+      function saveLoad() {
+        const missing = missingFields();
+        if (missing.length) {
+          showToast(`Complete required fields before saving: ${missing.join(", ")}.`, true);
+          return;
+        }
+        if (!validateRate()) {
+          showToast("Enter a valid non-negative rate.", true);
+          return;
+        }
+        const saved = loads();
+        const timestamp = new Date().toISOString();
+        const existing = editingId ? saved.find((item) => item.id === editingId) : null;
+        const record = {
+          id: editingId || (crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(16).slice(2)}`),
+          createdAt: existing ? existing.createdAt : timestamp,
+          updatedAt: timestamp,
+          fields: currentLoad()
+        };
+        const next = existing ? saved.map((item) => item.id === editingId ? record : item) : [record, ...saved];
+        if (!writeStorage(STORAGE_LOADS, next)) return;
+        editingId = record.id;
+        document.querySelector("#dispatch-title").textContent = `Edit Load ${record.fields.loadNumber}`.trim();
+        document.querySelector("#save-button").textContent = "Update load";
+        renderDashboard();
+        showToast(existing ? "Load updated in this browser." : "Load saved in this browser.");
+      }
+      function parseDateString(raw) {
+        const value = raw.trim();
+        const iso = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+        if (iso) return `${iso[2]}/${iso[3]}/${iso[1].slice(-2)}`;
+        const us = value.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{2}|\d{4})$/);
+        if (us) return `${us[1].padStart(2, "0")}/${us[2].padStart(2, "0")}/${us[3].length === 4 ? us[3].slice(-2) : us[3]}`;
+        return value;
+      }
+      function findLabeled(lines, labels) {
+        const labelPattern = labels.join("|");
+        const expression = new RegExp(`^\\s*(?:${labelPattern})(?:(?:\\s*[:#=-]\\s*)|\\s+|$)(.*?)\\s*$`, "i");
+        const nextLabel = /\s+(?=(?:load(?:\s*(?:number|no\.?|#|id|reference))?|bol(?:\s*(?:number|no\.?|#))?|bill\s+of\s+lading(?:\s*(?:number|no\.?|#))?|pu(?:\s*(?:number|no\.?|#))?|pickup(?:\s*(?:number|no\.?|#|date|time|address|city|state|zip|facility|appointment|appt))?|delivery(?:\s*(?:number|no\.?|#|date|time|address|city|state|zip|facility|appointment|appt))?|rate(?:\s*(?:amount|confirmation|per\s+mile))?|linehaul(?:\s*rate)?|total\s+rate|agreed\s+rate|carrier\s+pay)\s*(?:[:#=-]|\b))/i;
+        for (let index = 0; index < lines.length; index += 1) {
+          const match = lines[index].match(expression);
+          if (match) {
+            if (match[1] && !/^(?:date|time|appointment|appt|city|state|zip|address|facility|pickup|delivery)\s*[:#-]/i.test(match[1])) {
+              const following = match[1].search(nextLabel);
+              return match[1].slice(0, following < 0 ? undefined : following).trim().replace(/[|,;]+$/, "");
+            }
+            const next = (lines[index + 1] || "").trim();
+            if (next && !isFieldLabel(next) && !/^(?:load|bol|pu|pickup|delivery|origin|destination|shipper|consignee|receiver|facility|rate|address|city|state|zip|date|time|appointment|instructions|name|equipment type|commodity|pieces|weight|pickup from|pickup to|delivery from|delivery to)\b/i.test(next)) return next;
+          }
+        }
+        return "";
+      }
+      function findSectionValue(lines, labels) {
+        if (!lines.length) return "";
+        const expression = new RegExp(`^\\s*(?:${labels.join("|")})\\s*(?:[:#=-]\\s*)?(.*?)\\s*$`, "i");
+        for (let index = 0; index < lines.length; index += 1) {
+          const match = lines[index].match(expression);
+          if (!match) continue;
+          if (match[1] && !isFieldLabel(match[1])) return match[1].trim();
+          const next = (lines[index + 1] || "").trim();
+          if (next && !isFieldLabel(next) && !/^(?:name|address\s+city\s+state|pickup\s+from|pickup\s+to|delivery\s+from|delivery\s+to|zip)$/i.test(next)) return next;
+        }
+        return "";
+      }
+      function findIdentifier(lines, labels) {
+        const expression = new RegExp(`^\\s*(?:${labels.join("|")})\\s*(?:[:#=-]\\s*)?(.*)$`, "i");
+        for (let index = 0; index < lines.length; index += 1) {
+          const match = lines[index].match(expression);
+          if (!match) continue;
+          const candidates = [match[1], lines[index + 1] || ""];
+          for (const candidate of candidates) {
+            if (extractDate(candidate) || extractTime(candidate)) continue;
+            const identifiers = candidate.match(/\b[A-Z0-9][A-Z0-9/_-]*\b/gi) || [];
+            const identifier = identifiers.find((token) => /\d/.test(token));
+            if (identifier) return identifier;
+          }
+        }
+        return "";
+      }
+      function findRate(lines) {
+        const expression = /^\s*(?:total(?:\s+rate)?|carrier\s+pay|agreed\s+rate|linehaul(?:\s+rate)?|rate(?:\s+amount)?)\s*(?:[:#=-]\s*)?(.*)$/i;
+        for (let index = 0; index < lines.length; index += 1) {
+          if (/\brate\s+confirmation\b/i.test(lines[index])) continue;
+          const match = lines[index].match(expression);
+          if (!match) continue;
+          for (const candidate of [match[1], lines[index + 1] || ""]) {
+            if (/^\s*(?:confirmation|number|no\.?|#)\b/i.test(candidate)) continue;
+            const amount = candidate.match(/(?:^|[^\w])\$?\s*(\d[\d,]*(?:\.\d{1,2})?)(?:\s*(?:USD|US\$))?\s*$/i);
+            if (amount) return amount[1].replace(/,/g, "");
+          }
+        }
+        return "";
+      }
+      function isFieldLabel(line) {
+        return /^(?:(?:pick[\s-]?up|pu|delivery|deliver|del|origin|destination|shipper|consignee|receiver|loading|unloading)\s+(?:date|time|appointment|appt|address|street address|city|state|zip(?: code)?|facility|location|number|no\.?|#)|(?:appointment|appt)\s+(?:date|time|window)|(?:load|bol|bill of lading|rate|linehaul|total rate|agreed rate|carrier pay|address|street address|city|state|zip(?: code)?|facility|date|time|window|instructions|notes)\s*(?:number|no\.?|#|amount|confirmation)?\s*[:#=-]?)\s*$/i.test(line)
+          || /^(?:address\s+city\s+state|name(?:\s+(?:email|phone|pickup|delivery|from|to|reference|number|date|time))+|equipment\s+type\s+rate|commodity\s+pieces\s+weight|dispatcher\s+name\s+driver\s+truck\s+number\s+trailer\s+number)$/i.test(line);
+      }
+      function findSection(lines, kind) {
+        const pickup = kind === "pickup";
+        const heading = pickup
+          ? /^\s*(?:(?:pick[\s-]?up|origin|shipper|loading)(?:\s+(?:(?:location|information|details|stop)(?:\s*#?\s*\d+)?))?(?:\s*#?\s*\d+)?|PU(?:\s*#?\s*\d+)?(?:\s+stop)?)(?:\s+information\b.*)?\s*:?\s*$/i
+          : /^\s*(?:(?:delivery|deliver|destination|consignee|receiver|unloading)(?:\s+(?:(?:location|information|details|stop)(?:\s*#?\s*\d+)?))?(?:\s*#?\s*\d+)?|DEL(?:\s*#?\s*\d+)?(?:\s+stop)?)(?:\s+information\b.*)?\s*:?\s*$/i;
+        const other = pickup
+          ? /^\s*(?:(?:delivery|deliver|destination|consignee|receiver|unloading)(?:\s+(?:(?:location|information|details|stop)(?:\s*#?\s*\d+)?))?(?:\s*#?\s*\d+)?|DEL(?:\s*#?\s*\d+)?(?:\s+stop)?)(?:\s+information\b.*)?\s*:?\s*$/i
+          : /^\s*(?:(?:pick[\s-]?up|origin|shipper|loading)(?:\s+(?:(?:location|information|details|stop)(?:\s*#?\s*\d+)?))?(?:\s*#?\s*\d+)?|PU(?:\s*#?\s*\d+)?(?:\s+stop)?)(?:\s+information\b.*)?\s*:?\s*$/i;
+        let start = -1;
+        for (let i = 0; i < lines.length; i += 1) {
+          if (heading.test(lines[i])) { start = i; break; }
+        }
+        if (start < 0) return [];
+        let end = lines.length;
+        for (let i = start + 1; i < lines.length; i += 1) {
+          if (other.test(lines[i])) { end = i; break; }
+        }
+        return lines.slice(start, end);
+      }
+      function extractDate(value) {
+        const match = value.match(/\b(?:\d{1,2}[/-]\d{1,2}[/-]\d{2,4}|\d{4}-\d{2}-\d{2}|(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:t(?:ember)?)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\.?\s+\d{1,2}(?:,?\s+\d{2,4})?)\b/i);
+        return match ? parseDateString(match[0]) : "";
+      }
+      function extractTime(value) {
+        const match = value.match(/\b(?:\d{1,2}(?::\d{2})(?::\d{2})?\s*(?:AM|PM)?|\d{3,4})\s*(?:-|–|—|to)\s*(?:\d{1,2}(?::\d{2})(?::\d{2})?\s*(?:AM|PM)?|\d{3,4})\b|\b\d{1,2}:\d{2}(?::\d{2})?\s*(?:AM|PM)?\b/i);
+        return match ? match[0].replace(/\s+/g, " ").trim() : "";
+      }
+      function extractTimeWindow(value) {
+        const explicitRange = extractTime(value);
+        if (explicitRange && /(?:-|–|—|\bto\b)/i.test(explicitRange)) {
+          return explicitRange.replace(/(:\d{2}):\d{2}/g, "$1");
+        }
+        const times = [...value.matchAll(/\b\d{1,2}:\d{2}(?::\d{2})?\s*(?:AM|PM)?\b/gi)]
+          .map((match) => match[0].replace(/(:\d{2}):\d{2}/, "$1").replace(/\s+/g, " ").trim());
+        if (times.length >= 2) return `${times[0]}-${times[1]}`;
+        return times[0] || explicitRange;
+      }
+      function findTqlLocationSchedule(lines, kind) {
+        const heading = kind === "pickup"
+          ? /^\s*pick[\s-]?up location date time\s*$/i
+          : /^\s*delivery location date time\s*$/i;
+        const headingIndex = lines.findIndex((line) => heading.test(line));
+        if (headingIndex < 0) return {};
+        const row = lines[headingIndex + 1] || "";
+        const dateMatch = row.match(/\b(?:\d{1,2}[/-]\d{1,2}[/-]\d{2,4}|\d{4}-\d{2}-\d{2})\b/);
+        if (!dateMatch) return {};
+        const location = row.slice(0, dateMatch.index).trim();
+        const cityStateZip = location.match(/^(.+?)[,\s]+([A-Z]{2})(?:\s+(\d{5}(?:-\d{4})?))?$/i);
+        return {
+          city: cityStateZip ? cityStateZip[1].replace(/,\s*$/, "").trim() : "",
+          state: cityStateZip ? cityStateZip[2].toUpperCase() : "",
+          zip: cityStateZip?.[3] || "",
+          date: parseDateString(dateMatch[0]),
+          time: extractTimeWindow(row)
+        };
+      }
+      function findChrStop(lines, kind) {
+        const pickup = kind === "pickup";
+        const heading = pickup ? /^\s*SHIPPER\s*#?\s*\d+\s*:/i : /^\s*RECEIVER\s*#?\s*\d+\s*:/i;
+        const timeLabel = pickup ? /Pick[\s-]?Up\s+Time\s*:/i : /Delivery\s+Time\s*:/i;
+        const dateLabel = pickup ? /Pick[\s-]?Up\s+Date\s*:/i : /Delivery\s+Date\s*:/i;
+        const start = lines.findIndex((line) => heading.test(line));
+        if (start < 0) return {};
+        const section = lines.slice(start, start + 8);
+        const nameLine = lines[start];
+        const nameMatch = nameLine.match(/^\s*(?:SHIPPER|RECEIVER)\s*#?\s*\d+\s*:\s*(.*?)\s+(?:Pick[\s-]?Up|Delivery)\s+Date\s*:/i);
+        const addressLine = section.find((line) => /^\s*Address\s*:/i.test(line));
+        const address = addressLine
+          ? addressLine.replace(/^\s*Address\s*:\s*/i, "").replace(/\s+\*Open\b.*$/i, "").trim()
+          : "";
+        const locationLine = section.find((line) => /,\s*[A-Z]{2}\s+\d{5}(?:-\d{4})?/i.test(line));
+        const cityStateZip = locationLine
+          ? extractCityStateZip([locationLine.replace(/\s*(?:Pick[\s-]?Up|Delivery)\s+Time\s*:.*$/i, "").trim()])
+          : {};
+        const dateMatch = nameLine.match(dateLabel);
+        const dateText = dateMatch ? nameLine.slice(dateMatch.index + dateMatch[0].length) : "";
+        const timeLine = section.find((line) => timeLabel.test(line));
+        const timeMatch = timeLine && timeLine.match(timeLabel);
+        return {
+          facility: nameMatch?.[1]?.trim() || "",
+          address,
+          city: cityStateZip.city || "",
+          state: cityStateZip.state || "",
+          zip: cityStateZip.zip || "",
+          date: extractDate(dateText),
+          time: timeMatch ? extractTimeWindow(timeLine.slice(timeMatch.index + timeMatch[0].length)) : ""
+        };
+      }
+      function extractCityStateZip(lines) {
+        for (const line of lines) {
+          const match = line.match(/^(.+?)[,\s]+\s*([A-Z]{2}),?\s+(\d{5}(?:-\d{4})?)$/i);
+          if (match && /[A-Z]/i.test(match[1])) return { city: match[1].replace(/,\s*$/, "").trim(), state: match[2].toUpperCase(), zip: match[3] };
+        }
+        return {};
+      }
+      function extractStreetAddress(lines) {
+        const match = lines.find((line) => /^(?:\d{1,6}\s+\S|P\.?\s*O\.?\s+Box\s+\S|One[- ]?\s+\S)/i.test(line)
+          && !/\b\d{1,2}[/-]\d{1,2}[/-]\d{2,4}\b/.test(line));
+        return match || "";
+      }
+      function parseStreetAndCity(lines) {
+        for (const line of lines) {
+          const match = line.match(/^(\d{1,6}\s+.+?\b(?:street|st|road|rd|avenue|ave|drive|dr|boulevard|blvd|highway|hwy|lane|ln|court|ct|circle|cir|parkway|pkwy|way|terrace|ter|place|pl|trail|trl)\.?)\s+(.+?)\s+([A-Z]{2})(?:\s+(\d{5}(?:-\d{4})?))?$/i);
+          if (match) {
+            return { address: match[1].trim(), city: match[2].trim(), state: match[3].toUpperCase(), zip: match[4] || "" };
+          }
+        }
+        return {};
+      }
+      function extractStandaloneZip(lines) {
+        const line = lines.find((item) => /^\d{5}(?:-\d{4})?$/.test(item));
+        return line || "";
+      }
+      function extractFacility(lines, address, cityLine) {
+        for (const line of lines) {
+          if (line === address || line === cityLine || isFieldLabel(line)) continue;
+          if (/^(?:pickup|delivery)\s+information\b|^shipper\s+reference\b/i.test(line)) continue;
+          if (/^(?:(?:pickup|delivery)\s+information\b|(?:zip|address|city|state|name|pickup from|pickup to|delivery from|delivery to|shipper reference)\s*:?\s*|(?:pickup|delivery)\s+information\b.*shipper reference)/i.test(line)) continue;
+          if (/^(?:name\s+)?(?:pickup|delivery)\s+from\b/i.test(line)) continue;
+          const withoutSchedule = line
+            .replace(/\b\d{1,2}[/-]\d{1,2}[/-]\d{2,4}\b/g, "")
+            .replace(/\b\d{1,2}:\d{2}(?::\d{2})?\s*(?:AM|PM)?\b/gi, "")
+            .replace(/\s+/g, " ")
+            .replace(/^[\s:|,-]+|[\s:|,-]+$/g, "");
+          if (withoutSchedule && !/^(?:pickup|pick up|pu|delivery|deliver|del|origin|destination|shipper|consignee|receiver|loading|unloading)(?:\s+(?:location|information|details|stop))?$/i.test(withoutSchedule)) return withoutSchedule;
+        }
+        return "";
+      }
+      function extractPlaceName(lines, address, cityLine) {
+        return lines.find((line) => line !== address && line !== cityLine
+          && !extractDate(line) && !extractTime(line)
+          && !isFieldLabel(line)
+          && !/^(?:pickup|pick up|pu|delivery|deliver|del|origin|destination|shipper|consignee|receiver|loading|unloading)(?:\s+(?:location|information|details|stop)(?:\s*#?\s*\d+)?)?(?:\s*#?\s*\d+)?\s*:?\s*$/i.test(line)
+          && !/^(?:load|bol|pu|pickup|delivery|origin|destination|shipper|consignee|receiver|facility|rate|address|city|state|zip|date|time|appointment|instructions)\b\s*[:#-]/i.test(line));
+      }
+      function extractFields(text) {
+        const rawLines = text.split(/\r?\n/)
+          .map((line) => line.replace(/\s+/g, " ").replace(/\s+([,:])/g, "$1").trim())
+          .filter(Boolean);
+        const lines = [];
+        for (const rawLine of rawLines) {
+          if (/^(?:AM|PM)$/i.test(rawLine) && lines.length) {
+            lines[lines.length - 1] += ` ${rawLine}`;
+            continue;
+          }
+          lines.push(rawLine.replace(/^(?:stop\s*)?\d{1,2}\s*[:.)-]\s+/i, ""));
+        }
+        const pickupLines = findSection(lines, "pickup");
+        const deliveryLines = findSection(lines, "delivery");
+        const pickupTqlSchedule = findTqlLocationSchedule(lines, "pickup");
+        const deliveryTqlSchedule = findTqlLocationSchedule(lines, "delivery");
+        const pickupChrStop = findChrStop(lines, "pickup");
+        const deliveryChrStop = findChrStop(lines, "delivery");
+        const get = (all, scoped, aliases) => {
+          const inSection = findSectionValue(scoped, aliases);
+          if (inSection) return inSection;
+          const sectionOnly = new Set(["Facility name", "Facility", "Street address", "Address", "City", "State", "ZIP code", "ZIP", "ZIP(?: code)?", "Postal code", "Date", "Time", "Window", "Appointment date", "Appointment time", "Appt date", "Appt time", "Pickup location", "Delivery location"]);
+          const globalAliases = aliases.filter((alias) => !sectionOnly.has(alias));
+          return globalAliases.length ? findLabeled(all, globalAliases) : "";
+        };
+        const pickupStreetCity = parseStreetAndCity(pickupLines);
+        const deliveryStreetCity = parseStreetAndCity(deliveryLines);
+        const pickupCityStateZip = extractCityStateZip(pickupLines);
+        const deliveryCityStateZip = extractCityStateZip(deliveryLines);
+        const pickupSchedule = pickupLines.find((line) => extractDate(line) || extractTime(line)) || "";
+        const deliverySchedule = deliveryLines.find((line) => extractDate(line) || extractTime(line)) || "";
+        const pickupDateValue = get(lines, pickupLines, ["Pick[\\s-]?up date", "PU date", "Pickup appointment date", "Pickup appt date", "Appointment date", "Appt date", "Date"]);
+        const deliveryDateValue = get(lines, deliveryLines, ["Delivery date", "DEL date", "Delivery appointment date", "Delivery appt date", "Appointment date", "Appt date", "Date"]);
+        const pickupTimeValue = get(lines, pickupLines, ["Pick[\\s-]?up date/time", "PU date/time", "Pick[\\s-]?up time", "PU time", "Pickup appointment", "Pickup appt", "Appointment time", "Appt time", "Time", "Window"]);
+        const deliveryTimeValue = get(lines, deliveryLines, ["Delivery date/time", "DEL date/time", "Delivery time", "DEL time", "Delivery appointment", "Delivery appt", "Appointment time", "Appt time", "Time", "Window"]);
+        const pickupAddress = get(lines, pickupLines, ["Pick[\\s-]?up street address", "Pick[\\s-]?up address", "PU address", "Shipper address", "Origin address", "Street address", "Address"]);
+        const deliveryAddress = get(lines, deliveryLines, ["Delivery street address", "Delivery address", "DEL address", "Consignee address", "Destination address", "Street address", "Address"]);
+        const pickupCity = get(lines, pickupLines, ["Pickup city", "Origin city", "^City"]);
+        const pickupState = get(lines, pickupLines, ["Pickup state", "Origin state", "^State"]);
+        const pickupZip = get(lines, pickupLines, ["Pickup ZIP(?: code)?", "Origin ZIP(?: code)?", "^ZIP(?: code)?", "Postal code"]);
+        const deliveryCity = get(lines, deliveryLines, ["Delivery city", "Destination city", "^City"]);
+        const deliveryState = get(lines, deliveryLines, ["Delivery state", "Destination state", "^State"]);
+        const deliveryZip = get(lines, deliveryLines, ["Delivery ZIP(?: code)?", "Destination ZIP(?: code)?", "^ZIP(?: code)?", "Postal code"]);
+        const pickupCityLine = pickupLines.find((line) => extractCityStateZip([line]));
+        const deliveryCityLine = deliveryLines.find((line) => extractCityStateZip([line]));
+        const extracted = {
+          loadNumber: findIdentifier(lines, ["(?:(?:Carrier|Broker|Customer|RC)\\s+)?Load\\s*(?:number|no\\.?|#|id|ref(?:erence)?)", "Load\\s*#", "TQL\\s+RATE\\s+CONFIRMATION\\s+FOR\\s+PO\\s*#", "Rate\\s+Confirmation\\s+for\\s+Taz\\s*#", "(?:(?:Carrier|Broker|Customer|RC)\\s+)?Load"])
+            || text.match(/Carrier Load Confirmation\s*-\s*#\s*(\d+)/i)?.[1]
+            || "",
+          bolNumber: findIdentifier(lines, ["BOL\\s*(?:number|no\\.?|#)", "Bill\\s+of\\s+Lading\\s*(?:number|no\\.?|#)"]),
+          puNumber: findIdentifier(lines, ["PU\\s*(?:number|no\\.?|#)", "Pickup\\s*(?:number|no\\.?|#)"]),
+          rate: findRate(lines),
+          pickupFacility: get(lines, pickupLines, ["Pickup facility name", "Pickup facility", "Facility name", "Facility", "Shipper name", "Origin facility"])
+            || pickupChrStop.facility
+            || extractFacility(pickupLines, pickupAddress || pickupStreetCity.address || extractStreetAddress(pickupLines), pickupCityLine),
+          pickupAddress: pickupStreetCity.address || pickupAddress || extractStreetAddress(pickupLines) || pickupChrStop.address || "",
+          pickupCity: pickupStreetCity.city || pickupCityStateZip.city || pickupCity || pickupTqlSchedule.city || pickupChrStop.city || "",
+          pickupState: pickupStreetCity.state || pickupCityStateZip.state || pickupState || pickupTqlSchedule.state || pickupChrStop.state || "",
+          pickupZip: pickupStreetCity.zip || pickupCityStateZip.zip || extractStandaloneZip(pickupLines) || pickupZip || pickupTqlSchedule.zip || pickupChrStop.zip || "",
+          pickupDate: extractDate(pickupDateValue) || extractDate(pickupTimeValue) || extractDate(pickupSchedule) || pickupTqlSchedule.date || pickupChrStop.date || "",
+          pickupTime: extractTimeWindow(pickupTimeValue) || extractTimeWindow(pickupSchedule) || pickupTqlSchedule.time || pickupChrStop.time || "",
+          deliveryFacility: get(lines, deliveryLines, ["Delivery facility name", "Delivery facility", "Facility name", "Facility", "Consignee name", "Receiver name", "Destination facility"])
+            || deliveryChrStop.facility
+            || extractFacility(deliveryLines, deliveryAddress || deliveryStreetCity.address || extractStreetAddress(deliveryLines), deliveryCityLine),
+          deliveryAddress: deliveryStreetCity.address || deliveryAddress || extractStreetAddress(deliveryLines) || deliveryChrStop.address || "",
+          deliveryCity: deliveryStreetCity.city || deliveryCityStateZip.city || deliveryCity || deliveryTqlSchedule.city || deliveryChrStop.city || "",
+          deliveryState: deliveryStreetCity.state || deliveryCityStateZip.state || deliveryState || deliveryTqlSchedule.state || deliveryChrStop.state || "",
+          deliveryZip: deliveryStreetCity.zip || deliveryCityStateZip.zip || extractStandaloneZip(deliveryLines) || deliveryZip || deliveryTqlSchedule.zip || deliveryChrStop.zip || "",
+          deliveryDate: extractDate(deliveryDateValue) || extractDate(deliveryTimeValue) || extractDate(deliverySchedule) || deliveryTqlSchedule.date || deliveryChrStop.date || "",
+          deliveryTime: extractTimeWindow(deliveryTimeValue) || extractTimeWindow(deliverySchedule) || deliveryTqlSchedule.time || deliveryChrStop.time || "",
+          notes: findLabeled(lines, ["Special instructions", "Instructions", "Notes"])
+        };
+        for (const key of ["pickupDate", "deliveryDate"]) extracted[key] = parseDateString(extracted[key]);
+        return extracted;
+      }
+      function applyExtracted(extracted) {
+        let count = 0;
+        fieldElements.loadNumber.value = extracted.loadNumber || "";
+        for (const [name, extractedValue] of Object.entries(extracted)) {
+          if (!(name in fieldElements) || !extractedValue) continue;
+          fieldElements[name].value = extractedValue.replace(/^(?:stop\s*)?\d{1,2}\s*[:.)-]\s+/, "").trim();
+          count += 1;
+        }
+        renderPreview();
+        return count;
+      }
+      function extractionSummary(extracted, text) {
+        const missing = [
+          ["loadNumber", "Load number"],
+          ["rate", "Rate"]
+        ].filter(([name]) => !extracted[name]).map(([, label]) => label);
+        const missingSummary = missing.length
+          ? ` Not recognized: ${missing.join(", ")}. Enter those values in the form above; they are not inferred.`
+          : "";
+        const tqlReference = extracted.loadNumber && /^\s*TQL\s+RATE\s+CONFIRMATION\s+FOR\s+PO\s*#/im.test(text)
+          ? " The TQL PO# is shown as the load reference; verify it is the correct Load number before copying."
+          : "";
+        return `${missingSummary}${tqlReference}`;
+      }
+      async function extractPdf(file) {
+        if (!file) return;
+        if (file.type !== "application/pdf" && !file.name.toLowerCase().endsWith(".pdf")) {
+          setNotice(document.querySelector("#extract-notice"), "Please choose a PDF file.", "error");
+          return;
+        }
+        setNotice(document.querySelector("#extract-notice"), "Reading PDF text in your browser...", "");
+        try {
+          const pdfjs = await import("https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.min.mjs");
+          pdfjs.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.worker.min.mjs";
+          const documentData = await pdfjs.getDocument({ data: await file.arrayBuffer() }).promise;
+          const pages = [];
+          for (let pageNumber = 1; pageNumber <= documentData.numPages; pageNumber += 1) {
+            const page = await documentData.getPage(pageNumber);
+            const content = await page.getTextContent();
+            const lines = new Map();
+            for (const item of content.items) {
+              if (!item.str || !item.str.trim() || !item.transform) continue;
+              const y = Math.round(item.transform[5] / 2) * 2;
+              const row = lines.get(y) || [];
+              row.push({ x: item.transform[4], text: item.str.trim() });
+              lines.set(y, row);
+            }
+            pages.push([...lines.entries()]
+              .sort((a, b) => b[0] - a[0])
+              .map(([, row]) => row.sort((a, b) => a.x - b.x).map((item) => item.text).join(" "))
+              .join("\n"));
+          }
+          const text = pages.join("\n");
+          document.querySelector("#rc-text").value = text;
+          if (!text.trim()) {
+            setNotice(document.querySelector("#extract-notice"), "No selectable text was found. This may be a scanned/image PDF; enter its details manually. OCR is not configured.", "warning");
+            return;
+          }
+          const extracted = extractFields(text);
+          const filled = applyExtracted(extracted);
+          setNotice(document.querySelector("#extract-notice"), `${documentData.numPages} PDF page(s) read. ${filled} field(s) filled where recognizable. Review every value; unclear or unlabeled fields were left blank.${extractionSummary(extracted, text)}`, "success");
+        } catch (error) {
+          setNotice(document.querySelector("#extract-notice"), `PDF text extraction failed: ${error.message}. You can paste selectable PDF text or enter the fields manually. PDF extraction requires an internet connection to load PDF.js.`, "error");
+        }
+      }
+      async function copyMessage() {
+        const missing = missingFields();
+        if (missing.length && !window.confirm(`These required fields are missing:\n\n${missing.join(", ")}\n\nCopy the message anyway? Missing values will remain blank.`)) return;
+        if (!validateRate()) {
+          showToast("Enter a valid non-negative rate before copying.", true);
+          return;
+        }
+        try {
+          await navigator.clipboard.writeText(preview.textContent);
+          copyStatus.textContent = "Exact preview copied to clipboard.";
+          showToast("Dispatch message copied.");
+        } catch (error) {
+          const temporary = document.createElement("textarea");
+          temporary.value = preview.textContent;
+          temporary.setAttribute("readonly", "");
+          temporary.style.position = "fixed";
+          temporary.style.opacity = "0";
+          document.body.append(temporary);
+          temporary.select();
+          const copied = document.execCommand("copy");
+          temporary.remove();
+          if (!copied) {
+            copyStatus.textContent = "Copy failed. Select and copy the preview text manually.";
+            showToast("Could not access the clipboard. Copy the preview manually.", true);
+            return;
+          }
+          copyStatus.textContent = "Exact preview copied to clipboard.";
+          showToast("Dispatch message copied.");
+        }
+      }
+      function downloadMessage() {
+        const blob = new Blob([preview.textContent], { type: "text/plain;charset=utf-8" });
+        const url = URL.createObjectURL(blob);
+        const anchor = document.createElement("a");
+        const safeName = (value("loadNumber") || "dispatch").replace(/[^a-z0-9_-]/gi, "_");
+        anchor.href = url;
+        anchor.download = `${safeName}-dispatch.txt`;
+        anchor.click();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+        showToast("Dispatch message downloaded.");
+      }
+
+      document.querySelectorAll(".nav-button").forEach((button) => button.addEventListener("click", () => navigate(button.dataset.view)));
+      document.querySelectorAll("[data-go]").forEach((button) => button.addEventListener("click", () => {
+        if (button.dataset.go === "dispatch") newDispatch();
+        navigate(button.dataset.go);
+      }));
+      form.addEventListener("input", renderPreview);
+      form.addEventListener("change", renderPreview);
+      document.querySelector("#pdf-file").addEventListener("change", (event) => extractPdf(event.target.files[0]));
+      document.querySelector("#extract-button").addEventListener("click", () => {
+        const text = document.querySelector("#rc-text").value.trim();
+        if (!text) {
+          setNotice(document.querySelector("#extract-notice"), "Paste RC text or choose a PDF before extracting.", "warning");
+          return;
+        }
+        const extracted = extractFields(text);
+        const count = applyExtracted(extracted);
+        setNotice(document.querySelector("#extract-notice"), count
+          ? `${count} field(s) filled where recognizable. Review all values and correct anything uncertain.${extractionSummary(extracted, text)}`
+          : "No recognized labeled fields found. Enter the information manually; no values were guessed.", count ? "success" : "warning");
+      });
+      document.querySelector("#copy-button").addEventListener("click", copyMessage);
+      document.querySelector("#download-button").addEventListener("click", downloadMessage);
+      document.querySelector("#save-button").addEventListener("click", saveLoad);
+      document.querySelector("#clear-button").addEventListener("click", () => {
+        if (!window.confirm("Clear the current dispatch form? Unsaved field values will be lost.")) return;
+        newDispatch();
+        showToast("Dispatch form cleared.");
+      });
+      document.querySelector("#history-search").addEventListener("input", renderHistory);
+      document.querySelectorAll("#history-table, #recent-table").forEach((container) => container.addEventListener("click", (event) => {
+        const button = event.target.closest("[data-edit]");
+        if (button) openLoad(button.dataset.edit);
+      }));
+      document.querySelector("#save-settings").addEventListener("click", () => {
+        const fees = document.querySelector("#fee-rules").value.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
+        const next = { fees, dateFormat: document.querySelector("#date-format").value };
+        if (!writeStorage(STORAGE_SETTINGS, next)) return;
+        renderPreview();
+        setNotice(document.querySelector("#settings-notice"), "Settings saved in this browser.", "success");
+        showToast("Settings saved.");
+      });
+      document.querySelector("#reset-settings").addEventListener("click", () => {
+        document.querySelector("#fee-rules").value = DEFAULT_FEES.join("\n");
+        document.querySelector("#date-format").value = "us";
+        setNotice(document.querySelector("#settings-notice"), "Default values loaded. Save settings to apply them.", "");
+      });
+      document.querySelector("#date-format").addEventListener("change", (event) => {
+        const current = settings();
+        current.dateFormat = event.target.value;
+        if (writeStorage(STORAGE_SETTINGS, current)) {
+          renderPreview();
+          showToast("Date format setting saved.");
+        }
+      });
+
+      renderPreview();
+      renderDashboard();
+    </script>
+  </body>
+</html>
